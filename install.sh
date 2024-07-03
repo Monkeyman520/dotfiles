@@ -20,10 +20,10 @@ install_package_if_missing() {
         echo "Shell \"$package_name\" does not exist on the system, trying to install it"
 
         if [ -n "$tap_source" ]; then
-            brew tap $tap_source
+            brew tap "$tap_source"
         fi
 
-        brew install $package_name
+        brew install "$package_name"
     fi
 }
 
@@ -48,7 +48,7 @@ for package in "${packages[@]}"; do
     if [[ "$package" == "vfox" ]]; then
         tap_source="version-fox/tap"
     fi
-    install_package_if_missing $package $tap_source
+    install_package_if_missing "$package" $tap_source
 done
 
 # 检查当前登录 shell 是否是 zsh
@@ -59,24 +59,29 @@ else
   echo "Login shell is already zsh."
 fi
 
-if [ "$(command -v omz)" ]; then
+#!/bin/sh
+
+# 判断是否存在 $HOME/.oh-my-zsh 目录
+if [ -d "$HOME/.oh-my-zsh" ]; then
+  echo "oh-my-zsh directory found."
+
+  # 判断是否存在 omz 命令
+  if command -v omz > /dev/null 2>&1; then
     echo "Updating oh-my-zsh..."
-    omz update 
-else
-    echo "Installing oh-my-zsh..."
+    omz update
+  else
+    echo "omz command not found. Installing oh-my-zsh..."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  fi
+
+else
+  echo "Installing oh-my-zsh..."
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
 
-if [ -d "~/dotfiles" ]; then
-    echo "Updating dotfiles..."
-    cd ~/dotfiles ; git pull --recurse-submodules ; cd -
-else
-    echo "Cloning dotfiles..."
-    git clone -b main --depth 1 --recurse-submodule https://github.com/Monkeyman520/dotfiles.git ~/dotfiles
-fi
 
 # 定义插件目录
-ZSH_CUSTOM=${ZSH_CUSTOM:-~/.oh-my-zsh/custom}
+ZSH_CUSTOM=${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}
 
 # 检查并处理 zsh-autosuggestions 插件
 if [ -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]; then
@@ -114,6 +119,16 @@ else
   git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
 fi
 
-stow -R --adopt -d ~/dotfiles -t ~/ .
+if [ -d "$HOME/dotfiles" ]; then
+    echo "Updating dotfiles..."
+    cd "$HOME/dotfiles" && git restore . && git pull --recurse-submodules
+else
+    echo "Cloning dotfiles..."
+    git clone -b main --depth 1 --recurse-submodule https://github.com/Monkeyman520/dotfiles.git "$HOME/dotfiles"
+fi
 
-/bin/zsh -c "source ~/.zshrc"
+stow -D -d "$HOME/dotfiles" -t "$HOME/" .
+
+stow --adopt -d "$HOME/dotfiles" -t "$HOME/" .
+
+/bin/zsh -c "source $HOME/.zshrc"
