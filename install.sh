@@ -59,8 +59,6 @@ else
   echo "Login shell is already zsh."
 fi
 
-#!/bin/sh
-
 # 判断是否存在 $HOME/.oh-my-zsh 目录
 if [ -d "$HOME/.oh-my-zsh" ]; then
   echo "oh-my-zsh directory found."
@@ -71,11 +69,13 @@ if [ -d "$HOME/.oh-my-zsh" ]; then
     omz update
   else
     echo "omz command not found. Installing oh-my-zsh..."
+    rm -rf "$HOME/.oh-my-zsh/"
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
   fi
 
 else
   echo "Installing oh-my-zsh..."
+  rm -rf "$HOME/.oh-my-zsh/"
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
 
@@ -129,6 +129,6 @@ fi
 
 stow -D -d "$HOME/dotfiles" -t "$HOME/" .
 
-stow --adopt -d "$HOME/dotfiles" -t "$HOME/" .
+stow -R --adopt -d "$HOME/dotfiles" -t "$HOME/" .
 
 /bin/zsh -c "source $HOME/.zshrc"
