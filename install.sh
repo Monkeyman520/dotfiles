@@ -51,18 +51,69 @@ for package in "${packages[@]}"; do
     install_package_if_missing $package $tap_source
 done
 
-chsh -s "$(command -v zsh)"
+# 检查当前登录 shell 是否是 zsh
+if [ "$SHELL" != "$(command -v zsh)" ]; then
+  echo "Changing login shell to zsh..."
+  chsh -s "$(command -v zsh)"
+else
+  echo "Login shell is already zsh."
+fi
 
-git clone -b main --depth 1 --recurse-submodule https://github.com/Monkeyman520/dotfiles.git ~/dotfiles
+if [ "$(command -v omz)" ]; then
+    echo "Updating oh-my-zsh..."
+    omz update 
+else
+    echo "Installing oh-my-zsh..."
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+fi
 
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-git clone https://github.com/zsh-users/zsh-history-substring-search ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-history-substring-search
+if [ -d "~/dotfiles" ]; then
+    echo "Updating dotfiles..."
+    cd ~/dotfiles ; git pull --recurse-submodules ; cd -
+else
+    echo "Cloning dotfiles..."
+    git clone -b main --depth 1 --recurse-submodule https://github.com/Monkeyman520/dotfiles.git ~/dotfiles
+fi
 
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+# 定义插件目录
+ZSH_CUSTOM=${ZSH_CUSTOM:-~/.oh-my-zsh/custom}
+
+# 检查并处理 zsh-autosuggestions 插件
+if [ -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]; then
+  echo "Updating zsh-autosuggestions..."
+  cd "$ZSH_CUSTOM/plugins/zsh-autosuggestions" && git pull
+else
+  echo "Cloning zsh-autosuggestions..."
+  git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+fi
+
+# 检查并处理 zsh-syntax-highlighting 插件
+if [ -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]; then
+  echo "Updating zsh-syntax-highlighting..."
+  cd "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" && git pull
+else
+  echo "Cloning zsh-syntax-highlighting..."
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+fi
+
+# 检查并处理 zsh-history-substring-search 插件
+if [ -d "$ZSH_CUSTOM/plugins/zsh-history-substring-search" ]; then
+  echo "Updating zsh-history-substring-search..."
+  cd "$ZSH_CUSTOM/plugins/zsh-history-substring-search" && git pull
+else
+  echo "Cloning zsh-history-substring-search..."
+  git clone https://github.com/zsh-users/zsh-history-substring-search "$ZSH_CUSTOM/plugins/zsh-history-substring-search"
+fi
+
+# 检查并处理 tmux-plugins/tpm 插件
+if [ -d "$HOME/.tmux/plugins/tpm" ]; then
+  echo "Updating tpm..."
+  cd "$HOME/.tmux/plugins/tpm" && git pull
+else
+  echo "Cloning tpm..."
+  git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+fi
 
 stow -R --adopt -d ~/dotfiles -t ~/ .
 
-source ~/.zshrc
-
-nvim --headless -c 'quitall'
+/bin/zsh -c "source ~/.zshrc"
