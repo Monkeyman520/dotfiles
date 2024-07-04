@@ -14,15 +14,18 @@ if [ -z "$ZSH_COMPDUMP" ]; then
 fi
 
 plugins=(
-    git
-    git-commit
-    jsontools
-    vi-mode
-    # tmux
-    z
-    zsh-autosuggestions
-    zsh-syntax-highlighting
-    zsh-history-substring-search
+   fzf
+   fzf-tab
+   git
+   git-commit
+   jsontools
+   vi-mode
+   # tmux
+   z
+   zsh-autosuggestions
+   zsh-completions
+   zsh-syntax-highlighting
+   zsh-history-substring-search
 )
 
 export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
@@ -54,8 +57,6 @@ setopt hist_reduce_blanks
 # 共享历史记录
 setopt SHARE_HISTORY
 
-source $ZSH/oh-my-zsh.sh
-
 # zsh-syntax-highlighting
 # source ~/.config/zsh/themes/catppuccin_frappe-zsh-syntax-highlighting.zsh
 
@@ -81,6 +82,8 @@ source $ZSH/oh-my-zsh.sh
 export GOROOT='/usr/local/go'
 export GOPROXY=https://goproxy.io,direct
 export GOPATH="~/Data/go"
+
+# vscode
 alias code="open -a 'Visual Studio Code'"
 
 # env set-up
@@ -173,9 +176,11 @@ export PATH="/opt/homebrew/bin:$PATH"
 export PATH="/opt/homebrew/sbin:$PATH"
 # HomeBrew END
 
+# git
 export GIT_HOME="/usr/local/git"
 export PATH="$PATH:$GIT_HOME/bin"
 
+# nvm
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
@@ -226,16 +231,11 @@ bindkey '^g' _navi_widget
 export RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static
 export RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
 
-# go env manage
-[[ -s "~/.gvm/scripts/gvm" ]] && source "~/.gvm/scripts/gvm"
-
-source $ZSH/oh-my-zsh.sh
-eval "$(vfox activate zsh)"
-
-export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
-export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
-export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
-
+# completion and fzf config
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' menu no
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 
 #bindkey
 bindkey '^[[A' history-substring-search-up
@@ -244,3 +244,11 @@ bindkey '^[[B' history-substring-search-down
 
 # NEW_SESSION=`tmux new-session -dP`
 # TMUX=`tmux switch-client -t $NEW_SESSION`
+
+# go env manage
+[[ -s "~/.gvm/scripts/gvm" ]] && source "~/.gvm/scripts/gvm"
+
+source $ZSH/oh-my-zsh.sh
+
+eval "$(vfox activate zsh)"
+eval "$(fzf --zsh)"
