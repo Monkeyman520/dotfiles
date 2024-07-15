@@ -78,21 +78,10 @@ setopt SHARE_HISTORY
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
-# golang conf
-export GOROOT='/usr/local/go'
-export GOPROXY=https://goproxy.io,direct
-export GOPATH='~/Data/go'
-
-# vscode
-alias code="open -a 'Visual Studio Code'"
-
 # env set-up
 export PATH="$PATH:$GOROOT"
 export PATH="$PATH:$GOROOT/bin/"
 export PATH="$PATH:$GOPATH/bin/"
-export PATH="$PATH:$GOPATH/bin/darwin_arm64/"
-export PATH="$PATH:$GOPATH/bin/darwin_amd64/"
-export PATH="$PATH:$GOROOT/pkg/tool/darwin_arm64"
 
 # proxy conf
 alias wgon="wg-quick up wg0"
@@ -106,10 +95,6 @@ alias -s gz='tar -xzvf'
 alias -s tgz='tar -xzvf'
 alias -s zip='unzip'
 alias -s bz2='tar -xjvf'
-
-# cd alias
-alias cdd='cd ~/Desktop/'
-alias cdp='cd ~/Personal/'
 
 # git alias
 alias g='git'
@@ -158,37 +143,11 @@ alias gcpa='git cherry-pick --abort'
 alias gcpc='git cherry-pick --continue'
 alias gcs='git commit -S'
 
-# HomeBrew
-export HOMEBREW_NO_INSTALL_CLEANUP=1
-export HOMEBREW_INSTALL_FROM_API=1
-export HOMEBREW_API_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles/api"
-export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles"
-export HOMEBREW_BREW_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git"
-export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git"
-export HOMEBREW_NO_AUTO_UPDATE=true
-export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=true
-# for tap in core cask{,-fonts,-versions} command-not-found services; do
-#     brew tap --custom-remote --force-auto-update "homebrew/${tap}" "https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-${tap}.git"
-# export HOMEBREW_BOTTLE_DOMAIN=https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles
-# export HOMEBREW_API_DOMAIN="https://mirrors.ustc.edu.cn/homebrew-bottles/api" #brew.idayer.com
-export PATH="/opt/homebrew/bin:$PATH"
-export PATH="/opt/homebrew/sbin:$PATH"
-# HomeBrew END
-
-# git
-export GIT_HOME="/usr/local/git"
-export PATH="$PATH:$GIT_HOME/bin"
-
 # nvm
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 export NVM_NODEJS_ORG_MIRROR=https://npm.taobao.org/mirrors/node
-
-# llvm
-export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
-export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
-export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
 
 # navi
 _navi_call() {
