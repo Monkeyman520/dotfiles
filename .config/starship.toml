@@ -1,0 +1,197 @@
+add_newline = false
+# A minimal left prompt
+format = """$directory$character"""
+palette = "catppuccin_mocha"
+# move the rest of the prompt to the right
+right_format = """$all"""
+command_timeout = 1000
+# A continuation prompt that displays two filled-in arrows
+continuation_prompt = '▶▶ '
+
+[directory]
+# format = "[$path ]($style)"
+truncation_length = 4
+truncation_symbol = '…/'
+truncate_to_repo = true
+# truncation_symbol = ""
+style = "bold sky"
+home_symbol	= ""
+repo_root_style = "bold sky"
+repo_root_format = "[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style)  "
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+".config" = "Cfg"
+"Desktop" = ""
+"draft" = ""
+
+[character]
+success_symbol = '[➜](bold blue) '
+error_symbol = '[✗](bold red) '
+vimcmd_symbol = '[](bold fg:color_green)'
+vimcmd_replace_one_symbol = '[](bold fg:color_purple)'
+vimcmd_replace_symbol = '[](bold fg:color_purple)'
+vimcmd_visual_symbol = '[](bold fg:color_yellow)'
+
+[golang]
+# format = '[🏎💨 $version](bold cyan) '
+symbol = ""
+# style = "bg:#86BBD8"
+format = '[$symbol ($version) ]($style)'
+
+[c]
+symbol = ""
+# style = "bg:#86BBD8"
+format = '[$symbol ($version) ]($style)'
+
+[python]
+symbol = ""
+format = '[$symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+format = '[$symbol ($version) ]($style)'
+
+[rust]
+symbol = ""
+format = '[$symbol ($version) ]($style)'
+
+[lua]
+symbol = ''
+format = '[$symbol ($version) ]($style)'
+
+[docker_context]
+symbol = ""
+format = '[$symbol ($version) ]($style)'
+
+[shell]
+fish_indicator = '󰈺'
+powershell_indicator = '_'
+zsh_indicator = 'Zsh'
+unknown_indicator = 'shell'
+style = 'cyan bold'
+disabled = false
+
+[git_branch]
+# symbol = "🌱 "
+symbol = " "
+format = '[$symbol$branch(:$remote_branch)]($style) '
+truncation_length = 100
+truncation_symbol = "..."
+
+[git_commit]
+commit_hash_length = 4
+tag_symbol = "🔖 "
+
+[git_state]
+format = '[\($state( $progress_current of $progress_total)\)]($style) '
+cherry_pick = "[🍒 PICKING](bold red)"
+rebase = ""
+merge = ""
+am = ""
+
+[git_status]
+# conflicted = "🏳"
+# ahead = "🏎💨"
+# behind = "😰"
+# diverged = "😵"
+# untracked = "🤷"
+# stashed = "📦"
+# modified = "📝"
+# staged = '[++\($count\)](green)'
+# renamed = "👅"
+# deleted = "🗑"
+style = "italic bright-blue"
+format = """([⎪$ahead_behind$staged$modified$untracked$renamed$deleted$conflicted$stashed⎥]($style))"""
+conflicted = "[◪◦](italic bright-magenta)"
+ahead = "[▲│[${count}](bold white)│](italic green)"
+behind = "[▽│[${count}](bold white)│](italic red)"
+diverged = "[◇ ▲┤[${ahead_count}](regular white)│▽┤[${behind_count}](regular white)│](italic bright-magenta)"
+untracked = "[◌◦](italic bright-yellow)"
+stashed = "[◦◫◦](italic white)"
+modified = "[●◦](italic yellow)"
+staged = "[■┤[$count](bold white)│](italic bright-cyan)"
+renamed = "[◎◦](italic bright-blue)"
+deleted = "[✕](italic red)"
+
+[hostname]
+ssh_only = false
+format = "on [$hostname](bold red) "
+trim_at = ".local"
+disabled = true
+
+[username]
+style_user = "white bold"
+style_root = "black bold"
+format = "[$user]($style) "
+disabled = true
+show_always = true
+
+[cmd_duration]
+min_time = 500
+disabled = true
+format = 'underwent [$duration ](bold yellow)'
+
+[time]
+disabled = true
+format = '🕙 [$time]($style) '
+time_format = "%T"
+utc_time_offset = "+8"
+time_range = "00:00:00-23:59:59"
+
+[os]
+disabled = false
+format = "$symbol "
+# style = "bg:color_orange fg:color_fg0"
+
+[os.symbols]
+Windows = "󰍲"
+Ubuntu = "󰕈"
+SUSE = ""
+Raspbian = "󰐿"
+Mint = "󰣭"
+Macos = "󰀵"
+Manjaro = ""
+Linux = "󰌽"
+Gentoo = "󰣨"
+Fedora = "󰣛"
+Alpine = ""
+Amazon = ""
+Android = ""
+Arch = "󰣇"
+Artix = "󰣇"
+CentOS = ""
+Debian = "󰣚"
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"
+
+[palettes.catppuccin_mocha]
+rosewater = "#f5e0dc"
+flamingo = "#f2cdcd"
+pink = "#f5c2e7"
+mauve = "#cba6f7"
+red = "#f38ba8"
+maroon = "#eba0ac"
+peach = "#fab387"
+yellow = "#f9e2af"
+green = "#a6e3a1"
+teal = "#94e2d5"
+sky = "#89dceb"
+sapphire = "#74c7ec"
+blue = "#89b4fa"
+lavender = "#b4befe"
+text = "#cdd6f4"
+subtext1 = "#bac2de"
+subtext0 = "#a6adc8"
+overlay2 = "#9399b2"
+overlay1 = "#7f849c"
+overlay0 = "#6c7086"
+surface2 = "#585b70"
+surface1 = "#45475a"
+surface0 = "#313244"
+base = "#1e1e2e"
+mantle = "#181825"
+crust = "#11111b"

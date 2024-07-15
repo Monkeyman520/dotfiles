@@ -20,7 +20,7 @@ plugins=(
    git-commit
    jsontools
    vi-mode
-   # tmux
+   tmux
    z
    zsh-autosuggestions
    zsh-completions
@@ -81,7 +81,7 @@ setopt SHARE_HISTORY
 # golang conf
 export GOROOT='/usr/local/go'
 export GOPROXY=https://goproxy.io,direct
-export GOPATH="~/Data/go"
+export GOPATH='~/Data/go'
 
 # vscode
 alias code="open -a 'Visual Studio Code'"
@@ -92,8 +92,7 @@ export PATH="$PATH:$GOROOT/bin/"
 export PATH="$PATH:$GOPATH/bin/"
 export PATH="$PATH:$GOPATH/bin/darwin_arm64/"
 export PATH="$PATH:$GOPATH/bin/darwin_amd64/"
-export PATH="$PATH:/usr/local/go/pkg/tool/darwin_arm64"
-export PATH="$PATH:/usr/local/bin"
+export PATH="$PATH:$GOROOT/pkg/tool/darwin_arm64"
 
 # proxy conf
 alias wgon="wg-quick up wg0"
@@ -248,7 +247,8 @@ bindkey '^[[B' history-substring-search-down
 # go env manage
 [[ -s "~/.gvm/scripts/gvm" ]] && source "~/.gvm/scripts/gvm"
 
-source $ZSH/oh-my-zsh.sh
+[[ -s "$ZSH/oh-my-zsh.sh" ]] && source $ZSH/oh-my-zsh.sh
 
-eval "$(vfox activate zsh)"
-eval "$(fzf --zsh)"
+(( $+commands[vfox] )) && eval "$(vfox activate zsh)"
+(( $+commands[fzf] )) && eval "$(fzf --zsh)"
+(( $+commands[starship] )) && eval "$(starship init zsh)"
