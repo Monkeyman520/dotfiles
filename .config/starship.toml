@@ -1,9 +1,9 @@
 add_newline = false
 # A minimal left prompt
-format = """$directory$character"""
+format = """$all$directory$character"""
 palette = "catppuccin_mocha"
 # move the rest of the prompt to the right
-right_format = """$all"""
+# right_format = """$all"""
 command_timeout = 1000
 # A continuation prompt that displays two filled-in arrows
 continuation_prompt = '▶▶ '
@@ -15,18 +15,18 @@ truncation_symbol = '…/'
 truncate_to_repo = true
 # truncation_symbol = ""
 style = "bold sky"
-home_symbol	= ""
-repo_root_style = "bold sky"
-repo_root_format = "[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style)  "
+# home_symbol	= ""
+# repo_root_style = "bold sky"
+# repo_root_format = "[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style)  "
 
-[directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
-".config" = "Cfg"
-"Desktop" = ""
-"draft" = ""
+# [directory.substitutions]
+# "Documents" = "󰈙 "
+# "Downloads" = " "
+# "Music" = " "
+# "Pictures" = " "
+# ".config" = "Cfg"
+# "Desktop" = ""
+# "draft" = ""
 
 [character]
 success_symbol = '[➜](bold blue) '
