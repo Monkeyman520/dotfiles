@@ -42,6 +42,9 @@ symbol = ""
 # style = "bg:#86BBD8"
 format = '[$symbol ($version) ]($style)'
 
+[line_break]
+disabled = true
+
 [c]
 symbol = ""
 # style = "bg:#86BBD8"
