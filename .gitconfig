@@ -2,6 +2,18 @@
 	directory = /opt/homebrew/Homebrew/Library/Taps/homebrew/homebrew-core
 	directory = /opt/homebrew/Homebrew/Library/Taps/homebrew/homebrew-cask
 	directory = /opt/homebrew/Homebrew
+[init]
+	defaultBranch = main
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	line-numbers = true
+	side-by-side = true
+[merge]
+	conflictstyle = diff3
+[diff]
+	colorMoved = default
 [alias]
 	gpush = "!f() { : push ; r=$1; [[ -z $r ]] && r=origin; b=$2; t=$(awk \"{ print \\$2 }\" $(git rev-parse --git-dir)/HEAD); t=${t#refs/heads/}; [[ -z $b ]] && b=$t; cmd=\"git push $r HEAD:refs/for/$b%topic=$t\"; echo $cmd; echo; $cmd; }; f"
 	co = checkout
@@ -44,13 +56,23 @@
 [core]
 	excludesfile = ~/.gitignore_global
 	editor = nvim
+	pager = delta
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
+[credential "https://github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
 [mergetool "sourcetree"]
 	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
 [commit]
 	template = ~/.stCommitMsg
 [oh-my-zsh]
-	git-commit-alias = a87e9c715b2d3249681f9cc8f8d9718030674d50
+	git-commit-alias = 400591e71c894063eb08b6cae18ab66c19a1b756
+[user]
+	email = 
+	name = 

@@ -4,7 +4,7 @@ format = """$directory$character"""
 palette = "catppuccin_mocha"
 # move the rest of the prompt to the right
 right_format = """$all"""
-command_timeout = 1000
+command_timeout = 2300
 # A continuation prompt that displays two filled-in arrows
 continuation_prompt = '▶▶ '
 
@@ -17,7 +17,7 @@ truncate_to_repo = true
 style = "bold sky"
 home_symbol	= ""
 repo_root_style = "bold sky"
-repo_root_format = "[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style)  "
+repo_root_format = "[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style)"
 
 [directory.substitutions]
 "Documents" = "󰈙 "
@@ -29,8 +29,8 @@ repo_root_format = "[$before_root_path]($before_repo_root_style)[$repo_root]($re
 "draft" = ""
 
 [character]
-success_symbol = '[➜](bold blue) '
-error_symbol = '[✗](bold red) '
+success_symbol = '[➜](bold blue)'
+error_symbol = '[✗](bold red)'
 vimcmd_symbol = '[](bold fg:color_green)'
 vimcmd_replace_one_symbol = '[](bold fg:color_purple)'
 vimcmd_replace_symbol = '[](bold fg:color_purple)'
@@ -40,7 +40,7 @@ vimcmd_visual_symbol = '[](bold fg:color_yellow)'
 # format = '[🏎💨 $version](bold cyan) '
 symbol = ""
 # style = "bg:#86BBD8"
-format = '[$symbol ($version) ]($style)'
+format = "[${symbol} (${version} )(($virtualenv) )]($style)"
 
 [c]
 symbol = ""
