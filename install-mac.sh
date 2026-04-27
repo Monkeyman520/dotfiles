@@ -189,6 +189,20 @@ install_or_update_zinit() {
     fi
 }
 
+install_fzf_with_mise() {
+    if ! command -v mise >/dev/null 2>&1 && ! is_dry_run; then
+        echo 'command "mise" does not exist on system, skipping fzf install.' >&2
+        return
+    fi
+
+    if command -v fzf >/dev/null 2>&1 && ! is_dry_run; then
+        return
+    fi
+
+    echo 'Installing fzf with mise...'
+    run mise use -g fzf@latest
+}
+
 sync_dotfiles_repo() {
     if [ -d "$DOTFILES_DIR/.git" ]; then
         echo "Updating dotfiles..."
@@ -377,7 +391,6 @@ packages=(
     "mise:mise"
     "fd:fd"
     "ripgrep:rg"
-    "fzf:fzf"
     "neovim:nvim"
     "stow:stow"
     "starship:starship"
@@ -387,6 +400,8 @@ for package_spec in "${packages[@]}"; do
     IFS=":" read -r package_name command_name tap_source <<< "$package_spec"
     install_package_if_missing "$package_name" "$command_name" "$tap_source"
 done
+
+install_fzf_with_mise
 
 if [ -n "$TEST_HOME" ]; then
     echo "TEST_HOME mode enabled: $HOME"

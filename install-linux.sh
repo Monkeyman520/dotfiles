@@ -126,6 +126,17 @@ run_sudo() {
     sudo_cmd "$@"
 }
 
+ensure_neovim_ppa() {
+    if command -v nvim >/dev/null 2>&1 && ! is_dry_run; then
+        return
+    fi
+
+    echo "Adding Neovim unstable PPA..."
+    run_sudo apt-get update
+    run_sudo apt-get install -y software-properties-common
+    run_sudo add-apt-repository -y ppa:neovim-ppa/unstable
+}
+
 install_apt_packages() {
     local package_specs=(
         "ca-certificates:update-ca-certificates"
@@ -134,7 +145,6 @@ install_apt_packages() {
         "zsh:zsh"
         "tmux:tmux"
         "stow:stow"
-        "fzf:fzf"
         "fd-find:fdfind"
         "ripgrep:rg"
         "neovim:nvim"
@@ -183,6 +193,20 @@ install_mise_if_missing() {
 
     echo 'Installing mise...'
     run_shell 'curl https://mise.run | sh'
+}
+
+install_fzf_with_mise() {
+    if ! command -v mise >/dev/null 2>&1 && ! is_dry_run; then
+        echo 'command "mise" does not exist on system, skipping fzf install.' >&2
+        return
+    fi
+
+    if command -v fzf >/dev/null 2>&1 && ! is_dry_run; then
+        return
+    fi
+
+    echo 'Installing fzf with mise...'
+    run mise use -g fzf@latest
 }
 
 install_starship_if_missing() {
@@ -386,9 +410,11 @@ if is_dry_run; then
 fi
 
 require_ubuntu_2404
+ensure_neovim_ppa
 install_apt_packages
 install_atuin_if_missing
 install_mise_if_missing
+install_fzf_with_mise
 install_starship_if_missing
 ensure_fd_command
 change_login_shell
