@@ -27,7 +27,7 @@ Git、Tmux、Neovim、WezTerm 以及 Homebrew 软件清单。
 
 **🚀 安装方式**
 
-推荐先克隆仓库，再执行脚本：
+macOS 推荐先克隆仓库，再执行脚本：
 
 ```bash
 git clone --recurse-submodules https://github.com/Monkeyman520/dotfiles.git ~/dotfiles
@@ -35,12 +35,20 @@ cd ~/dotfiles
 bash install-mac.sh
 ```
 
+Ubuntu 24.04 可以使用快速安装脚本：
+
+```bash
+git clone --recurse-submodules https://github.com/Monkeyman520/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+bash install-linux.sh
+```
+
 脚本默认会做这些事情：
 
 1. 安装或初始化 Homebrew
 2. 安装基础命令行工具
-3. 安装或更新 oh-my-zsh
-4. 安装或更新常用插件
+3. 安装或更新 zinit
+4. 由 zinit 安装或更新常用 Zsh 插件
 5. 同步 `dotfiles` 仓库和 submodule
 6. 从 `brew-file` 恢复 Homebrew 软件
 7. 使用 `stow` 将配置应用到用户目录

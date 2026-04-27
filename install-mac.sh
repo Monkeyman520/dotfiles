@@ -8,7 +8,7 @@ print_help() {
   bash install-mac.sh [--help]
 
 说明:
-  自动安装 Homebrew、常用工具、oh-my-zsh、相关插件，并同步 dotfiles。
+  自动安装 Homebrew、常用工具、zinit、相关插件，并同步 dotfiles。
 
 选项:
   -h, --help
@@ -56,7 +56,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_REPO_URL="https://github.com/Monkeyman520/dotfiles.git"
 DOTFILES_BRANCH="main"
 DOTFILES_DIR="${HOME}/dotfiles"
-OH_MY_ZSH_INSTALL_URL="https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
+ZINIT_REPO_URL="https://github.com/zdharma-continuum/zinit.git"
+ZINIT_HOME="${ZINIT_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git}"
 HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 
 is_dry_run() {
@@ -164,10 +165,6 @@ install_package_if_missing() {
     run brew install "$package_name"
 }
 
-install_oh_my_zsh() {
-    run_remote_script sh "$OH_MY_ZSH_INSTALL_URL" RUNZSH=no CHSH=no KEEP_ZSHRC=yes
-}
-
 update_or_clone_plugin() {
     local repo_url=$1
     local target_dir=$2
@@ -178,6 +175,17 @@ update_or_clone_plugin() {
     else
         echo "Cloning $(basename "$target_dir")..."
         run git clone --depth 1 "$repo_url" "$target_dir"
+    fi
+}
+
+install_or_update_zinit() {
+    if [ -d "$ZINIT_HOME/.git" ]; then
+        echo "Updating zinit..."
+        run git -C "$ZINIT_HOME" pull --ff-only
+    else
+        echo "Installing zinit..."
+        run mkdir -p "$(dirname "$ZINIT_HOME")"
+        run git clone --depth 1 "$ZINIT_REPO_URL" "$ZINIT_HOME"
     fi
 }
 
@@ -231,9 +239,10 @@ export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=true
 
 packages=(
     "zsh:zsh"
+    "atuin:atuin"
     "git:git"
     "tmux:tmux"
-    "vfox:vfox:version-fox/tap"
+    "mise:mise"
     "fd:fd"
     "ripgrep:rg"
     "fzf:fzf"
@@ -264,33 +273,7 @@ else
     echo "Login shell is already zsh."
 fi
 
-if [ -d "$HOME/.oh-my-zsh" ]; then
-    echo "oh-my-zsh directory found."
-
-    if command -v omz >/dev/null 2>&1; then
-        echo "Updating oh-my-zsh..."
-        run omz update
-    else
-        echo "omz command not found. Reinstalling oh-my-zsh..."
-        run rm -rf "$HOME/.oh-my-zsh/"
-        install_oh_my_zsh
-    fi
-else
-    echo "Installing oh-my-zsh..."
-    install_oh_my_zsh
-fi
-
-if [ -n "$TEST_HOME" ]; then
-    ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
-else
-    ZSH_CUSTOM=${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}
-fi
-
-update_or_clone_plugin "https://github.com/Aloxaf/fzf-tab" "$ZSH_CUSTOM/plugins/fzf-tab"
-update_or_clone_plugin "https://github.com/zsh-users/zsh-completions" "$ZSH_CUSTOM/plugins/zsh-completions"
-update_or_clone_plugin "https://github.com/zsh-users/zsh-autosuggestions" "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-update_or_clone_plugin "https://github.com/zsh-users/zsh-syntax-highlighting" "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
-update_or_clone_plugin "https://github.com/zsh-users/zsh-history-substring-search" "$ZSH_CUSTOM/plugins/zsh-history-substring-search"
+install_or_update_zinit
 update_or_clone_plugin "https://github.com/tmux-plugins/tpm" "$HOME/.tmux/plugins/tpm"
 
 sync_dotfiles_repo
