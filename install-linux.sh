@@ -308,8 +308,45 @@ migrate_legacy_stow_links() {
     done
 }
 
+backup_stow_conflicts() {
+    local relative_paths=(
+        ".profile"
+        ".zprofile"
+        ".zshenv"
+        ".zshrc"
+        ".gitconfig"
+        ".gitflow_export"
+        ".gitignore_global"
+        ".tmux.conf"
+        ".tmux.conf.local"
+        ".config/atuin/config.toml"
+        ".config/fish/config.fish"
+        ".config/fish/fish_variables"
+        ".config/pip/pip.conf"
+        ".config/starship.toml"
+    )
+    local backup_dir="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
+    local relative_path
+    local target_path
+    local backup_path
+
+    for relative_path in "${relative_paths[@]}"; do
+        target_path="$HOME/$relative_path"
+
+        if [ ! -e "$target_path" ] || [ -L "$target_path" ] || [ -d "$target_path" ]; then
+            continue
+        fi
+
+        backup_path="$backup_dir/$relative_path"
+        echo "Backing up existing file before stow: $relative_path"
+        run mkdir -p "$(dirname "$backup_path")"
+        run mv "$target_path" "$backup_path"
+    done
+}
+
 apply_dotfiles() {
-    run stow --restow --adopt -d "$DOTFILES_DIR" -t "$HOME" shell git tmux atuin nvim wezterm fish pip starship
+    backup_stow_conflicts
+    run stow --restow -d "$DOTFILES_DIR" -t "$HOME" shell git tmux atuin nvim wezterm fish pip starship
 }
 
 change_login_shell() {
