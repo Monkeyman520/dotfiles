@@ -203,8 +203,75 @@ sync_dotfiles_repo() {
     run git -C "$DOTFILES_DIR" submodule update --init --recursive
 }
 
+resolve_symlink_target() {
+    local link_path=$1
+    local link_target
+    local target_dir
+    local target_name
+
+    link_target="$(readlink "$link_path")"
+
+    case "$link_target" in
+        /*)
+            printf '%s\n' "$link_target"
+            ;;
+        *)
+            target_dir="$(dirname "$link_target")"
+            target_name="$(basename "$link_target")"
+            (
+                cd "$(dirname "$link_path")"
+                cd "$target_dir" 2>/dev/null
+                printf '%s/%s\n' "$(pwd -P)" "$target_name"
+            )
+            ;;
+    esac
+}
+
+migrate_legacy_stow_links() {
+    local relative_paths=(
+        ".config"
+        ".profile"
+        ".zprofile"
+        ".zshenv"
+        ".zshrc"
+        ".gitconfig"
+        ".gitflow_export"
+        ".gitignore_global"
+        ".tmux.conf"
+        ".tmux.conf.local"
+        ".config/atuin"
+        ".config/fish"
+        ".config/nvim"
+        ".config/pip"
+        ".config/starship.toml"
+        ".config/wezterm"
+    )
+    local relative_path
+    local target_path
+    local resolved_target
+
+    for relative_path in "${relative_paths[@]}"; do
+        target_path="$HOME/$relative_path"
+
+        if [ ! -L "$target_path" ]; then
+            continue
+        fi
+
+        if ! resolved_target="$(resolve_symlink_target "$target_path")"; then
+            continue
+        fi
+
+        case "$resolved_target" in
+            "$DOTFILES_DIR"/*)
+                echo "Removing legacy stow link: $relative_path"
+                run unlink "$target_path"
+                ;;
+        esac
+    done
+}
+
 apply_dotfiles() {
-    run stow --restow --adopt -d "$DOTFILES_DIR" -t "$HOME/" .
+    run stow --restow --adopt -d "$DOTFILES_DIR" -t "$HOME" shell git tmux atuin nvim wezterm fish pip starship
 }
 
 warmup_tools() {
@@ -215,12 +282,40 @@ warmup_tools() {
 
 restore_brew_packages() {
     local brewfile_path
+    local missing_packages=()
+    local package
 
     if ! brewfile_path="$(resolve_brewfile_path)"; then
         echo "brew-file not found, skipping Homebrew bundle restore."
         return
     fi
 
+    if ! command -v brew >/dev/null 2>&1; then
+        echo 'command "brew" does not exist on system, skipping Homebrew bundle restore.' >&2
+        return
+    fi
+
+    if is_dry_run; then
+        echo "DRY_RUN mode: skipping per-package brew checks."
+        echo "Restoring Homebrew packages from $(basename "$brewfile_path")..."
+        run brew bundle --file="$brewfile_path"
+        return
+    fi
+
+    while IFS= read -r package; do
+        if brew list --versions "$package" >/dev/null 2>&1; then
+            continue
+        fi
+
+        missing_packages+=("$package")
+    done < <(sed -n 's/^brew "\([^"]*\)".*/\1/p' "$brewfile_path")
+
+    if [ ${#missing_packages[@]} -eq 0 ]; then
+        echo "All brew packages in $(basename "$brewfile_path") already exist, skipping Homebrew bundle restore."
+        return
+    fi
+
+    echo "Missing brew packages from $(basename "$brewfile_path"): ${missing_packages[*]}"
     echo "Restoring Homebrew packages from $(basename "$brewfile_path")..."
     run brew bundle --file="$brewfile_path"
 }
@@ -278,5 +373,6 @@ update_or_clone_plugin "https://github.com/tmux-plugins/tpm" "$HOME/.tmux/plugin
 
 sync_dotfiles_repo
 restore_brew_packages
+migrate_legacy_stow_links
 apply_dotfiles
 warmup_tools

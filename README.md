@@ -1,28 +1,42 @@
 # dotfiles
 
-这是一个面向 macOS 的个人开发环境配置仓库，用来统一管理 Shell、
-Git、Tmux、Neovim、WezTerm 以及 Homebrew 软件清单。
+这是一个面向 macOS 和 Ubuntu 的个人开发环境配置仓库，用来统一管理
+Shell、Git、Tmux、Atuin、Neovim、WezTerm 以及软件清单。
 
-仓库通过 `stow` 将配置链接到用户目录，并通过 `install-mac.sh` 完成
-安装、同步、恢复和初始化。
+仓库按职能拆分为多个 `stow` package，再通过安装脚本将指定 package
+链接到用户目录。
 
 **✨ 项目作用**
 
 - 统一管理常用配置文件，避免手动散落修改。
 - 用 `brew-file` 恢复 Homebrew 的 taps、brew、cask、go、cargo 工具。
 - 用 Git submodule 管理独立演进的 `nvim` 和 `wezterm` 配置。
-- 用 `install-mac.sh` 自动完成初始化、更新与配置落地。
+- 用 `install-mac.sh` / `install-linux.sh` 自动完成初始化、更新与配置落地。
 
 
 **🧩 目录说明**
 
-- `.zshrc`、`.zprofile`、`.zshenv`：Zsh 环境与交互配置
-- `.gitconfig`：Git 别名、分页器、凭据等配置
-- `.tmux.conf`：Tmux 快捷键、主题和插件配置
-- `.config/nvim`：Neovim 子模块配置
-- `.config/wezterm`：WezTerm 子模块配置
+配置按 `stow` package 分组：
+
+```text
+dotfiles/
+├── shell/       # .profile、.zprofile、.zshenv、.zshrc
+├── git/         # .gitconfig、.gitflow_export、.gitignore_global
+├── tmux/        # .tmux.conf、.tmux.conf.local
+├── atuin/       # .config/atuin/config.toml
+├── nvim/        # .config/nvim 子模块
+├── wezterm/     # .config/wezterm 子模块
+├── fish/        # .config/fish
+├── pip/         # .config/pip
+└── starship/    # .config/starship.toml
+```
+
+其他仓库级文件：
+
+- `.gitmodules`：Git 子模块元数据，必须保留在仓库根目录
 - `brew-file`：Homebrew 恢复文件，脚本会用 `brew bundle` 导入
 - `install-mac.sh`：macOS 初始化和更新脚本
+- `install-linux.sh`：Ubuntu 24.04 快速安装脚本
 
 
 **🚀 安装方式**
@@ -51,7 +65,7 @@ bash install-linux.sh
 4. 由 zinit 安装或更新常用 Zsh 插件
 5. 同步 `dotfiles` 仓库和 submodule
 6. 从 `brew-file` 恢复 Homebrew 软件
-7. 使用 `stow` 将配置应用到用户目录
+7. 使用 `stow` 将指定 package 应用到用户目录
 8. 用 headless 模式预热 Neovim
 
 

@@ -127,24 +127,44 @@ run_sudo() {
 }
 
 install_apt_packages() {
-    local packages=(
-        ca-certificates
-        curl
-        git
-        zsh
-        tmux
-        stow
-        fzf
-        fd-find
-        ripgrep
-        neovim
-        unzip
-        xz-utils
-        build-essential
+    local package_specs=(
+        "ca-certificates:update-ca-certificates"
+        "curl:curl"
+        "git:git"
+        "zsh:zsh"
+        "tmux:tmux"
+        "stow:stow"
+        "fzf:fzf"
+        "fd-find:fdfind"
+        "ripgrep:rg"
+        "neovim:nvim"
+        "unzip:unzip"
+        "xz-utils:xz"
+        "build-essential:gcc"
     )
+    local packages_to_install=()
+    local package_spec
+    local package_name
+    local command_name
 
+    for package_spec in "${package_specs[@]}"; do
+        IFS=":" read -r package_name command_name <<< "$package_spec"
+
+        if command -v "$command_name" >/dev/null 2>&1; then
+            continue
+        fi
+
+        packages_to_install+=("$package_name")
+    done
+
+    if [ ${#packages_to_install[@]} -eq 0 ]; then
+        echo "All apt-managed commands already exist, skipping apt install."
+        return
+    fi
+
+    echo "Installing missing apt packages: ${packages_to_install[*]}"
     run_sudo apt-get update
-    run_sudo apt-get install -y "${packages[@]}"
+    run_sudo apt-get install -y "${packages_to_install[@]}"
 }
 
 install_atuin_if_missing() {
@@ -221,8 +241,75 @@ sync_dotfiles_repo() {
     run git -C "$DOTFILES_DIR" submodule update --init --recursive
 }
 
+resolve_symlink_target() {
+    local link_path=$1
+    local link_target
+    local target_dir
+    local target_name
+
+    link_target="$(readlink "$link_path")"
+
+    case "$link_target" in
+        /*)
+            printf '%s\n' "$link_target"
+            ;;
+        *)
+            target_dir="$(dirname "$link_target")"
+            target_name="$(basename "$link_target")"
+            (
+                cd "$(dirname "$link_path")"
+                cd "$target_dir" 2>/dev/null
+                printf '%s/%s\n' "$(pwd -P)" "$target_name"
+            )
+            ;;
+    esac
+}
+
+migrate_legacy_stow_links() {
+    local relative_paths=(
+        ".config"
+        ".profile"
+        ".zprofile"
+        ".zshenv"
+        ".zshrc"
+        ".gitconfig"
+        ".gitflow_export"
+        ".gitignore_global"
+        ".tmux.conf"
+        ".tmux.conf.local"
+        ".config/atuin"
+        ".config/fish"
+        ".config/nvim"
+        ".config/pip"
+        ".config/starship.toml"
+        ".config/wezterm"
+    )
+    local relative_path
+    local target_path
+    local resolved_target
+
+    for relative_path in "${relative_paths[@]}"; do
+        target_path="$HOME/$relative_path"
+
+        if [ ! -L "$target_path" ]; then
+            continue
+        fi
+
+        if ! resolved_target="$(resolve_symlink_target "$target_path")"; then
+            continue
+        fi
+
+        case "$resolved_target" in
+            "$DOTFILES_DIR"/*)
+                echo "Removing legacy stow link: $relative_path"
+                run unlink "$target_path"
+                ;;
+        esac
+    done
+}
+
 apply_dotfiles() {
-    run stow --restow --adopt -d "$DOTFILES_DIR" -t "$HOME/" .
+    run stow --restow --adopt -d "$DOTFILES_DIR" -t "$HOME" shell git tmux atuin nvim wezterm fish pip starship
 }
 
 change_login_shell() {
@@ -271,5 +358,6 @@ change_login_shell
 install_or_update_zinit
 update_or_clone_repo "https://github.com/tmux-plugins/tpm" "$HOME/.tmux/plugins/tpm"
 sync_dotfiles_repo
+migrate_legacy_stow_links
 apply_dotfiles
 warmup_tools
