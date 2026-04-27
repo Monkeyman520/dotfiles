@@ -184,6 +184,11 @@ install_atuin_if_missing() {
 
     echo 'Installing atuin...'
     run_shell 'curl --proto "=https" --tlsv1.2 -LsSf https://setup.atuin.sh | sh'
+
+    if [ -f "$HOME/.atuin/bin/env" ]; then
+        # shellcheck disable=SC1091
+        . "$HOME/.atuin/bin/env"
+    fi
 }
 
 install_mise_if_missing() {
