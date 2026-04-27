@@ -8,7 +8,7 @@ print_help() {
   bash install-mac.sh [--help]
 
 说明:
-  自动安装 Homebrew、常用工具、oh-my-zsh、相关插件，并同步 dotfiles。
+  自动安装 Homebrew、常用工具、zinit、相关插件，并同步 dotfiles。
 
 选项:
   -h, --help
@@ -56,7 +56,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_REPO_URL="https://github.com/Monkeyman520/dotfiles.git"
 DOTFILES_BRANCH="main"
 DOTFILES_DIR="${HOME}/dotfiles"
-OH_MY_ZSH_INSTALL_URL="https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
+ZINIT_REPO_URL="https://github.com/zdharma-continuum/zinit.git"
+ZINIT_HOME="${ZINIT_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git}"
 HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 
 is_dry_run() {
@@ -164,10 +165,6 @@ install_package_if_missing() {
     run brew install "$package_name"
 }
 
-install_oh_my_zsh() {
-    run_remote_script sh "$OH_MY_ZSH_INSTALL_URL" RUNZSH=no CHSH=no KEEP_ZSHRC=yes
-}
-
 update_or_clone_plugin() {
     local repo_url=$1
     local target_dir=$2
@@ -179,6 +176,31 @@ update_or_clone_plugin() {
         echo "Cloning $(basename "$target_dir")..."
         run git clone --depth 1 "$repo_url" "$target_dir"
     fi
+}
+
+install_or_update_zinit() {
+    if [ -d "$ZINIT_HOME/.git" ]; then
+        echo "Updating zinit..."
+        run git -C "$ZINIT_HOME" pull --ff-only
+    else
+        echo "Installing zinit..."
+        run mkdir -p "$(dirname "$ZINIT_HOME")"
+        run git clone --depth 1 "$ZINIT_REPO_URL" "$ZINIT_HOME"
+    fi
+}
+
+install_fzf_with_mise() {
+    if ! command -v mise >/dev/null 2>&1 && ! is_dry_run; then
+        echo 'command "mise" does not exist on system, skipping fzf install.' >&2
+        return
+    fi
+
+    if command -v fzf >/dev/null 2>&1 && ! is_dry_run; then
+        return
+    fi
+
+    echo 'Installing fzf with mise...'
+    run mise use -g fzf@latest
 }
 
 sync_dotfiles_repo() {
@@ -195,8 +217,112 @@ sync_dotfiles_repo() {
     run git -C "$DOTFILES_DIR" submodule update --init --recursive
 }
 
+resolve_symlink_target() {
+    local link_path=$1
+    local link_target
+    local target_dir
+    local target_name
+
+    link_target="$(readlink "$link_path")"
+
+    case "$link_target" in
+        /*)
+            printf '%s\n' "$link_target"
+            ;;
+        *)
+            target_dir="$(dirname "$link_target")"
+            target_name="$(basename "$link_target")"
+            (
+                cd "$(dirname "$link_path")"
+                cd "$target_dir" 2>/dev/null
+                printf '%s/%s\n' "$(pwd -P)" "$target_name"
+            )
+            ;;
+    esac
+}
+
+migrate_legacy_stow_links() {
+    local relative_paths=(
+        ".config"
+        ".profile"
+        ".zprofile"
+        ".zshenv"
+        ".zshrc"
+        ".gitconfig"
+        ".gitflow_export"
+        ".gitignore_global"
+        ".tmux.conf"
+        ".tmux.conf.local"
+        ".config/atuin"
+        ".config/fish"
+        ".config/nvim"
+        ".config/pip"
+        ".config/starship.toml"
+        ".config/wezterm"
+    )
+    local relative_path
+    local target_path
+    local resolved_target
+
+    for relative_path in "${relative_paths[@]}"; do
+        target_path="$HOME/$relative_path"
+
+        if [ ! -L "$target_path" ]; then
+            continue
+        fi
+
+        if ! resolved_target="$(resolve_symlink_target "$target_path")"; then
+            continue
+        fi
+
+        case "$resolved_target" in
+            "$DOTFILES_DIR"/*)
+                echo "Removing legacy stow link: $relative_path"
+                run unlink "$target_path"
+                ;;
+        esac
+    done
+}
+
+backup_stow_conflicts() {
+    local relative_paths=(
+        ".profile"
+        ".zprofile"
+        ".zshenv"
+        ".zshrc"
+        ".gitconfig"
+        ".gitflow_export"
+        ".gitignore_global"
+        ".tmux.conf"
+        ".tmux.conf.local"
+        ".config/atuin/config.toml"
+        ".config/fish/config.fish"
+        ".config/fish/fish_variables"
+        ".config/pip/pip.conf"
+        ".config/starship.toml"
+    )
+    local backup_dir="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
+    local relative_path
+    local target_path
+    local backup_path
+
+    for relative_path in "${relative_paths[@]}"; do
+        target_path="$HOME/$relative_path"
+
+        if [ ! -e "$target_path" ] || [ -L "$target_path" ] || [ -d "$target_path" ]; then
+            continue
+        fi
+
+        backup_path="$backup_dir/$relative_path"
+        echo "Backing up existing file before stow: $relative_path"
+        run mkdir -p "$(dirname "$backup_path")"
+        run mv "$target_path" "$backup_path"
+    done
+}
+
 apply_dotfiles() {
-    run stow --restow --adopt -d "$DOTFILES_DIR" -t "$HOME/" .
+    backup_stow_conflicts
+    run stow --restow -d "$DOTFILES_DIR" -t "$HOME" shell git tmux atuin nvim wezterm fish pip starship
 }
 
 warmup_tools() {
@@ -207,12 +333,40 @@ warmup_tools() {
 
 restore_brew_packages() {
     local brewfile_path
+    local missing_packages=()
+    local package
 
     if ! brewfile_path="$(resolve_brewfile_path)"; then
         echo "brew-file not found, skipping Homebrew bundle restore."
         return
     fi
 
+    if ! command -v brew >/dev/null 2>&1; then
+        echo 'command "brew" does not exist on system, skipping Homebrew bundle restore.' >&2
+        return
+    fi
+
+    if is_dry_run; then
+        echo "DRY_RUN mode: skipping per-package brew checks."
+        echo "Restoring Homebrew packages from $(basename "$brewfile_path")..."
+        run brew bundle --file="$brewfile_path"
+        return
+    fi
+
+    while IFS= read -r package; do
+        if brew list --versions "$package" >/dev/null 2>&1; then
+            continue
+        fi
+
+        missing_packages+=("$package")
+    done < <(sed -n 's/^brew "\([^"]*\)".*/\1/p' "$brewfile_path")
+
+    if [ ${#missing_packages[@]} -eq 0 ]; then
+        echo "All brew packages in $(basename "$brewfile_path") already exist, skipping Homebrew bundle restore."
+        return
+    fi
+
+    echo "Missing brew packages from $(basename "$brewfile_path"): ${missing_packages[*]}"
     echo "Restoring Homebrew packages from $(basename "$brewfile_path")..."
     run brew bundle --file="$brewfile_path"
 }
@@ -231,12 +385,12 @@ export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=true
 
 packages=(
     "zsh:zsh"
+    "atuin:atuin"
     "git:git"
     "tmux:tmux"
-    "vfox:vfox:version-fox/tap"
+    "mise:mise"
     "fd:fd"
     "ripgrep:rg"
-    "fzf:fzf"
     "neovim:nvim"
     "stow:stow"
     "starship:starship"
@@ -246,6 +400,8 @@ for package_spec in "${packages[@]}"; do
     IFS=":" read -r package_name command_name tap_source <<< "$package_spec"
     install_package_if_missing "$package_name" "$command_name" "$tap_source"
 done
+
+install_fzf_with_mise
 
 if [ -n "$TEST_HOME" ]; then
     echo "TEST_HOME mode enabled: $HOME"
@@ -264,36 +420,11 @@ else
     echo "Login shell is already zsh."
 fi
 
-if [ -d "$HOME/.oh-my-zsh" ]; then
-    echo "oh-my-zsh directory found."
-
-    if command -v omz >/dev/null 2>&1; then
-        echo "Updating oh-my-zsh..."
-        run omz update
-    else
-        echo "omz command not found. Reinstalling oh-my-zsh..."
-        run rm -rf "$HOME/.oh-my-zsh/"
-        install_oh_my_zsh
-    fi
-else
-    echo "Installing oh-my-zsh..."
-    install_oh_my_zsh
-fi
-
-if [ -n "$TEST_HOME" ]; then
-    ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
-else
-    ZSH_CUSTOM=${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}
-fi
-
-update_or_clone_plugin "https://github.com/Aloxaf/fzf-tab" "$ZSH_CUSTOM/plugins/fzf-tab"
-update_or_clone_plugin "https://github.com/zsh-users/zsh-completions" "$ZSH_CUSTOM/plugins/zsh-completions"
-update_or_clone_plugin "https://github.com/zsh-users/zsh-autosuggestions" "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-update_or_clone_plugin "https://github.com/zsh-users/zsh-syntax-highlighting" "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
-update_or_clone_plugin "https://github.com/zsh-users/zsh-history-substring-search" "$ZSH_CUSTOM/plugins/zsh-history-substring-search"
+install_or_update_zinit
 update_or_clone_plugin "https://github.com/tmux-plugins/tpm" "$HOME/.tmux/plugins/tpm"
 
 sync_dotfiles_repo
 restore_brew_packages
+migrate_legacy_stow_links
 apply_dotfiles
 warmup_tools

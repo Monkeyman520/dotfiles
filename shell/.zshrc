@@ -1,8 +1,10 @@
 # OPENSPEC:START
 # OpenSpec shell 补全目录
-fpath=("$HOME/.oh-my-zsh/custom/completions" $fpath)
-autoload -Uz compinit
-compinit
+[[ -d "$HOME/.zsh/completions" ]] && fpath=("$HOME/.zsh/completions" $fpath)
+if [[ ! -o interactive ]]; then
+  autoload -Uz compinit
+  compinit
+fi
 # OPENSPEC:END
 
 # 基础语言与工具链
@@ -19,12 +21,6 @@ export HOMEBREW_BREW_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebr
 export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git"
 export HOMEBREW_PIP_INDEX_URL="https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
 export HOMEBREW_NO_AUTO_UPDATE=true
-
-# Node / NVM
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-export NVM_NODEJS_ORG_MIRROR=https://npm.taobao.org/mirrors/node
 
 # 路径与编译参数
 export GIT_HOME="/usr/local/git"
@@ -66,32 +62,34 @@ alias cdp='cd ~/Personal/'
 
 [[ -o interactive ]] || return
 
-export ZSH="$HOME/.oh-my-zsh"
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=30'
 if [ -z "$ZSH_COMPDUMP" ]; then
   ZSH_COMPDUMP="${ZDOTDIR:-${HOME}}/.cache/zsh/zcompdump-${SHORT_HOST:-${HOST%%.*}}-${ZSH_VERSION}"
 fi
-export ZSH_CACHE_DIR="/tmp/ohmyzsh-cache"
 export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
-plugins=(
-  fzf
-  fzf-tab
-  zsh-completions
-  git
-  git-commit
-  jsontools
-  vi-mode
-  tmux
-  docker
-  zsh-autosuggestions
-  zsh-syntax-highlighting
-  zsh-history-substring-search
-)
-fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
-if [[ -z "$CODEX_SANDBOX" && -r "$ZSH/oh-my-zsh.sh" ]]; then
-  source "$ZSH/oh-my-zsh.sh"
+
+if [[ ! -r "$ZINIT_HOME/zinit.zsh" && -z "$CODEX_SANDBOX" ]]; then
+  command mkdir -p "${ZINIT_HOME:h}"
+  command git clone --depth=1 https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+fi
+
+if [[ -r "$ZINIT_HOME/zinit.zsh" ]]; then
+  source "$ZINIT_HOME/zinit.zsh"
+  DOTFILES_ZINIT_READY=1
+
+  zinit ice blockf
+  zinit light zsh-users/zsh-completions
+
+  autoload -Uz compinit
+  compinit -d "$ZSH_COMPDUMP"
+  zinit cdreplay -q
+
+  zinit light Aloxaf/fzf-tab
+  zinit light zsh-users/zsh-autosuggestions
 else
-  autoload -U compinit && compinit
+  autoload -Uz compinit
+  compinit -d "$ZSH_COMPDUMP"
 fi
 
 if [[ -r /Applications/WezTerm.app/Contents/Resources/wezterm.sh ]]; then
@@ -269,14 +267,46 @@ zstyle ':completion:*:*:docker:*' option-stacking yes
 zstyle ':completion:*:*:docker-*:*' option-stacking yes
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 
-bindkey '^[[A' history-substring-search-up
-bindkey '^[[B' history-substring-search-down
+if command -v atuin >/dev/null 2>&1; then
+  bindkey -v
+
+  export ATUIN_NOBIND="true"
+  eval "$(atuin init zsh)"
+
+  _bind_atuin_keys() {
+    bindkey -M viins '^R' atuin-search
+    bindkey -M vicmd '^R' atuin-search
+
+    bindkey -M viins '^[[A' atuin-up-search
+    bindkey -M viins '^[OA' atuin-up-search
+    bindkey -M vicmd '^[[A' atuin-up-search
+    bindkey -M vicmd '^[OA' atuin-up-search
+  }
+
+  _bind_atuin_keys
+
+  # zsh-vi-mode 可能重建 keymap，这里在它初始化后重新绑定 Atuin。
+  function zvm_after_init() {
+    zvm_bindkey viins '^R' atuin-search
+    zvm_bindkey vicmd '^R' atuin-search
+
+    zvm_bindkey viins '^[[A' atuin-up-search
+    zvm_bindkey viins '^[OA' atuin-up-search
+    zvm_bindkey vicmd '^[[A' atuin-up-search
+    zvm_bindkey vicmd '^[OA' atuin-up-search
+  }
+fi
+
+if (( ${DOTFILES_ZINIT_READY:-0} )); then
+  zinit ice depth=1
+  zinit light jeffreytse/zsh-vi-mode
+  zinit light zsh-users/zsh-syntax-highlighting
+fi
 
 command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
 command -v delta >/dev/null 2>&1 && eval "$(delta --generate-completion zsh)"
 command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 command -v thefuck >/dev/null 2>&1 && eval "$(thefuck --alias)"
-command -v vfox >/dev/null 2>&1 && eval "$(vfox activate zsh)"
 command -v fzf >/dev/null 2>&1 && eval "$(fzf --zsh)"
 
 export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'

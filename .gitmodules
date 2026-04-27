@@ -1,6 +1,6 @@
-[submodule ".config/nvim"]
-	path = .config/nvim
+[submodule "nvim/.config/nvim"]
+	path = nvim/.config/nvim
 	url = https://github.com/all-dot-files/astronvim-v5.git
-[submodule ".config/wezterm"]
-	path = .config/wezterm
+[submodule "wezterm/.config/wezterm"]
+	path = wezterm/.config/wezterm
 	url = https://github.com/all-dot-files/wezterm-config.git
